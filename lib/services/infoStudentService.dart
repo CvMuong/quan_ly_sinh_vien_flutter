@@ -58,4 +58,15 @@ class InfoStudentService {
     }
     return token;
   }
+
+  static Future<String> fetchStudentName(String mssv) async {
+    final response = await http.get(Uri.parse('${Config.baseUrl}/student/mssv/$mssv'));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['ten_sinh_vien'] as String;
+    } else {
+      throw Exception('Không thể tải tên sinh viên: ${response.statusCode}');
+    }
+  }
 }

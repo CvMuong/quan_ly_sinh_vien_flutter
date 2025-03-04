@@ -37,7 +37,6 @@ class SectionClassService {
         final List<dynamic> data = jsonDecode(response.body);
         List<SectionClassModel> sections = data.map((json) => SectionClassModel.fromJson(json)).toList();
 
-        // Lấy thông tin bổ sung cho từng lớp học phần
         await Future.wait(sections.map((section) async {
           try {
             await Future.wait([

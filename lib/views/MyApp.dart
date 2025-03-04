@@ -72,7 +72,15 @@ class _StudentAppState extends State<StudentApp> {
             child: QRScanView(
               onQRCodeScanned: (String code) {
                 Navigator.of(context).pop();
-                _handleQRCodeResult(code);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Mã QR: $code'),
+                    backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
               },
             ),
           ),
@@ -87,58 +95,13 @@ class _StudentAppState extends State<StudentApp> {
     );
   }
 
-  void _handleQRCodeResult(String code) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Mã QR: $code'),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
-
-  // Updated method for face recognition attendance
   void _openCameraForFaceRecognition() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          contentPadding: EdgeInsets.zero,
-          content: SizedBox(
-            width: MediaQuery.of(context).size.width * 0.8,
-            height: MediaQuery.of(context).size.height * 0.5,
-            child: FaceScanView(
-              onFaceRecognized: (String result) {
-                Navigator.of(context).pop(); // Đóng dialog sau khi nhận diện
-                _handleFaceRecognitionResult(result); // Xử lý kết quả
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Đóng", style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _handleFaceRecognitionResult(String result) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Kết quả nhận diện: $result'),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(seconds: 3),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const FaceScanView(), // Mở FaceScanView full màn hình
       ),
     );
-    // Gọi API để gửi dữ liệu điểm danh nếu cần
   }
 
   @override
@@ -164,7 +127,7 @@ class _StudentAppState extends State<StudentApp> {
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: Colors.white,
-            fontSize: 24,
+            fontSize: 23,
             letterSpacing: 1.2,
           ),
         ),
@@ -186,7 +149,7 @@ class _StudentAppState extends State<StudentApp> {
                 color: Colors.white,
                 size: 28,
               ),
-              tooltip: 'Điểm danh bằng gương mặt',
+              tooltip: 'Xem gương mặt',
               onPressed: _openCameraForFaceRecognition,
             ),
           ),

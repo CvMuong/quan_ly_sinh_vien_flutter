@@ -1,48 +1,29 @@
-import 'dart:typed_data';
-
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:google_ml_kit/google_ml_kit.dart';
-import 'dart:io' show Platform;
+import '../controllers/faceController.dart';
+import '../services/infoStudentService.dart';
 
 class FaceScanView extends StatefulWidget {
-  final Function(String) onFaceRecognized;
-
-  const FaceScanView({super.key, required this.onFaceRecognized});
+  const FaceScanView({super.key});
 
   @override
   State<FaceScanView> createState() => _FaceScanViewState();
 }
 
 class _FaceScanViewState extends State<FaceScanView> {
-  CameraController? _cameraController;
-  late List<CameraDescription> cameras;
-  bool _isCameraInitialized = false;
-  FaceDetector? _faceDetector;
-  bool _isDetecting = false;
+  FaceScanController? _controller;
+  String _resultMessage = '';
   String _errorMessage = '';
 
   @override
   void initState() {
     super.initState();
     _initializeCamera();
-    try {
-      _faceDetector = GoogleMlKit.vision.faceDetector(
-        FaceDetectorOptions(
-          enableContours: true,
-          enableClassification: true,
-        ),
-      );
-    } catch (e) {
-      debugPrint('Error initializing FaceDetector: $e');
-      _errorMessage = 'Lỗi khởi tạo FaceDetector: $e';
-    }
   }
 
   Future<void> _initializeCamera() async {
     try {
-      cameras = await availableCameras();
-      debugPrint('Available cameras: ${cameras.length}');
+      final cameras = await availableCameras();
       if (cameras.isEmpty) {
         setState(() {
           _errorMessage = 'Không tìm thấy camera trên thiết bị.';
@@ -52,137 +33,199 @@ class _FaceScanViewState extends State<FaceScanView> {
 
       CameraDescription? frontCamera;
       for (var camera in cameras) {
-        debugPrint('Camera: ${camera.name}, Lens Direction: ${camera.lensDirection}');
         if (camera.lensDirection == CameraLensDirection.front) {
           frontCamera = camera;
           break;
         }
       }
 
-      if (frontCamera == null) {
-        setState(() {
-          _errorMessage = 'Không tìm thấy camera trước. Sử dụng camera mặc định.';
-          _cameraController = CameraController(
-            cameras[0],
-            ResolutionPreset.medium,
-          );
-        });
-      } else {
-        _cameraController = CameraController(
-          frontCamera,
-          ResolutionPreset.medium,
-        );
-      }
+      _controller = FaceScanController(frontCamera ?? cameras[0]);
+      await _controller!.initialize();
 
-      await _cameraController!.initialize();
-      debugPrint('Camera initialized successfully');
       if (!mounted) return;
-
-      setState(() {
-        _isCameraInitialized = true;
-      });
-
-      _cameraController!.startImageStream(_processCameraImage);
+      setState(() {});
     } catch (e) {
-      debugPrint('Error initializing camera: $e');
       setState(() {
         _errorMessage = 'Lỗi khởi tạo camera: $e';
       });
     }
   }
 
-  void _processCameraImage(CameraImage image) async {
-    if (_isDetecting || _faceDetector == null) return;
-    _isDetecting = true;
+  Future<void> _scanFace() async {
+    if (_controller == null) return;
 
-    final inputImage = await _convertCameraImage(image);
-    if (inputImage == null) {
-      debugPrint('Failed to convert CameraImage to InputImage');
-      _isDetecting = false;
+    setState(() {
+      _resultMessage = 'Đang quét...';
+    });
+
+    final result = await _controller!.captureAndDetectFace();
+    if (!mounted) return;
+
+    setState(() {
+      _resultMessage = '';
+    });
+
+    if (result == null) {
+      _showAlertDialog('Lỗi', 'Không nhận diện được khuôn mặt');
       return;
     }
 
-    try {
-      final faces = await _faceDetector!.processImage(inputImage);
-      if (faces.isNotEmpty) {
-        widget.onFaceRecognized('Face detected');
-        _cameraController!.stopImageStream();
-      }
-    } catch (e) {
-      debugPrint('Error processing image with FaceDetector: $e');
-    }
+    // Giả sử result là Map<String, dynamic> chứa các trường 'match' và 'shouldSave'
+    final match = result['match'];
+    final shouldSave = result['shouldSave'] ?? false;
+    final currentTime = DateTime.now().toString();
 
-    _isDetecting = false;
+    switch (match) {
+      case 'No face detected':
+        _showAlertDialog('Lỗi', 'Không nhận diện được khuôn mặt');
+        break;
+      case 'unknown':
+        _showAlertDialog('Thông báo', 'Không có dữ liệu khuôn mặt trong hệ thống');
+        break;
+      case 'Đã điểm danh':
+        _showAlertDialog('Thông báo', 'Bạn đã điểm danh rồi');
+        break;
+      default:
+      // Giả sử match là mã số sinh viên
+        _handleAttendance(match, currentTime, shouldSave);
+        break;
+    }
   }
 
-  Future<InputImage?> _convertCameraImage(CameraImage image) async {
+  Future<void> _handleAttendance(String mssv, String time, bool shouldSave) async {
     try {
-      final allBytes = <int>[];
-      for (var plane in image.planes) {
-        allBytes.addAll(plane.bytes);
-      }
-      final bytes = Uint8List.fromList(allBytes);
+      final studentName = await InfoStudentService.fetchStudentName(mssv);
+      final status = shouldSave ? 'Thành công' : 'Không thành công';
 
-      final Size imageSize = Size(image.width.toDouble(), image.height.toDouble());
-      final rotation = InputImageRotationValue.fromRawValue(
-          _cameraController!.description.sensorOrientation) ??
-          InputImageRotation.rotation0deg;
-      final format = Platform.isAndroid ? InputImageFormat.nv21 : InputImageFormat.bgra8888;
-
-      return InputImage.fromBytes(
-        bytes: bytes,
-        metadata: InputImageMetadata(
-          size: imageSize,
-          rotation: rotation,
-          format: format,
-          bytesPerRow: image.planes[0].bytesPerRow,
-        ),
+      _showAlertDialog(
+        'Điểm danh',
+        'Điểm danh thành công\n'
+            'Mã số sinh viên: $mssv\n'
+            'Tên sinh viên: $studentName\n'
+            'Thời gian: $time\n'
+            'Trạng thái: $status',
       );
     } catch (e) {
-      debugPrint("Error converting CameraImage to InputImage: $e");
-      return null;
+      _showAlertDialog(
+        'Lỗi',
+        'Không thể lấy thông tin sinh viên: $e',
+      );
     }
   }
 
-  @override
-  void dispose() {
-    _cameraController?.dispose();
-    try {
-      _faceDetector?.close();
-    } catch (e) {
-      debugPrint('Error closing FaceDetector: $e');
-    }
-    super.dispose();
+  void _showAlertDialog(String title, String content) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(content),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_errorMessage.isNotEmpty) {
-      return Center(
-        child: Text(
-          _errorMessage,
-          style: const TextStyle(color: Colors.red, fontSize: 16),
-        ),
-      );
-    }
+    return Scaffold(
+      body: Stack(
+        children: [
+          // Camera preview
+          if (_controller != null && _controller!.cameraController != null && _controller!.cameraController!.value.isInitialized)
+            Positioned.fill(
+              child: FittedBox(
+                fit: BoxFit.cover,
+                clipBehavior: Clip.hardEdge,
+                child: SizedBox(
+                  width: _controller!.cameraController!.value.previewSize!.height,
+                  height: _controller!.cameraController!.value.previewSize!.width,
+                  child: CameraPreview(_controller!.cameraController!),
+                ),
+              ),
+            ),
 
-    if (!_isCameraInitialized || _cameraController == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
+          // Hiển thị lỗi
+          if (_errorMessage.isNotEmpty)
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(16.0),
+                color: Colors.black54,
+                child: Text(
+                  _errorMessage,
+                  style: const TextStyle(color: Colors.red, fontSize: 18),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
 
-    return Column(
-      children: [
-        Expanded(
-          child: CameraPreview(_cameraController!),
-        ),
-        const Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Text(
-            'Vui lòng đặt gương mặt vào khung hình',
-            style: TextStyle(color: Colors.white, fontSize: 16),
-          ),
-        ),
-      ],
+          // Hiển thị loading
+          if (_controller == null && _errorMessage.isEmpty)
+            const Center(child: CircularProgressIndicator()),
+
+          // Hướng dẫn và kết quả
+          if (_controller != null && _controller!.cameraController != null && _errorMessage.isEmpty)
+            Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Nút quay lại
+                Padding(
+                  padding: const EdgeInsets.only(top: 40.0, left: 20.0),
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                ),
+                // Khung gợi ý
+                Center(
+                  child: Container(
+                    width: 300,
+                    height: 400,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.white, width: 2),
+                      borderRadius: BorderRadius.circular(150),
+                    ),
+                  ),
+                ),
+                // Hướng dẫn, nút quét và kết quả
+                Container(
+                  padding: const EdgeInsets.all(20.0),
+                  color: Colors.black54,
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Vui lòng đặt gương mặt vào khung hình',
+                        style: TextStyle(color: Colors.white, fontSize: 18),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 10),
+                      ElevatedButton(
+                        onPressed: _scanFace,
+                        child: const Text('Quét khuôn mặt'),
+                      ),
+                      if (_resultMessage.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 10),
+                          child: Text(
+                            _resultMessage,
+                            style: const TextStyle(color: Colors.white, fontSize: 16),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
     );
   }
 }

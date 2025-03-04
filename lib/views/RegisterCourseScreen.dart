@@ -534,7 +534,7 @@ class _RegisterCourseScreenState extends State<RegisterCourseScreen> with Single
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
-            'Thông Tin Lớp Học Phần ${section.subject?.ten_mon}',
+            'Thông Tin Lớp Học Phần \n${section.subject?.ten_mon}',
             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent),
           ),
           content: Column(
