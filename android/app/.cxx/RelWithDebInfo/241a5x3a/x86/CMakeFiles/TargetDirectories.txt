@@ -1,0 +1,2 @@
+D:/Android_Project/Flutter/quan_ly_diem/android/app/.cxx/RelWithDebInfo/241a5x3a/x86/CMakeFiles/edit_cache.dir
+D:/Android_Project/Flutter/quan_ly_diem/android/app/.cxx/RelWithDebInfo/241a5x3a/x86/CMakeFiles/rebuild_cache.dir
