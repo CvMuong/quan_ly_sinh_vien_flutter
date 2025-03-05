@@ -4,7 +4,7 @@ import 'package:quan_ly_diem/services/config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FaceApiService {
-  static const String apiUrl = 'http://192.168.123.82:3333/api/face';
+  static const String apiUrl = '${Config.baseUrl}/face';
 
   static Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();

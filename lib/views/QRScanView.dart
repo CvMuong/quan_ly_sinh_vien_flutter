@@ -38,23 +38,32 @@ class _QRScanViewState extends State<QRScanView> {
   // Kiểm tra xem chuỗi có phải là URL không
   bool _isUrl(String code) {
     final urlPattern = RegExp(
-      r'^(https?:\/\/)?([\w\d\-_]+\.)+[\w\d\-_]+(\/.*)?$',
+      r'^(https?:\/\/)?([\w\d\-_]+\.)+[\w\d\-_]+(\/[\w\d\-_]*)*\/?$',
       caseSensitive: false,
     );
-    return urlPattern.hasMatch(code);
+    return urlPattern.hasMatch(code.trim()); // Loại bỏ khoảng trắng thừa
   }
 
   // Mở URL trong trình duyệt
   Future<void> _launchUrl(String url) async {
-    // debugPrint('URL gốc: $url');
     String finalUrl = url.startsWith('http') ? url : 'https://$url';
-    Uri uri = Uri.parse(finalUrl);
-    // debugPrint('Đang mở URL: $uri');
+    Uri? uri;
+    try {
+      uri = Uri.parse(finalUrl);
+    } catch (e) {
+      debugPrint('Không phải URL hợp lệ: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Dữ liệu không phải URL hợp lệ')),
+        );
+      }
+      return;
+    }
 
     try {
       await launchUrl(
         uri,
-        mode: LaunchMode.externalApplication, // Mở trong trình duyệt ngoài
+        mode: LaunchMode.externalApplication,
       );
       debugPrint('Đã mở trình duyệt thành công');
     } catch (e) {
@@ -77,13 +86,12 @@ class _QRScanViewState extends State<QRScanView> {
           title: const Text('Mã QR đã quét', style: TextStyle(fontWeight: FontWeight.bold)),
           content: Text('Dữ liệu: $code', style: const TextStyle(fontSize: 16)),
           actions: [
-            if (_isUrl(code))
-              TextButton(
-                onPressed: () async {
-                  await _launchUrl(code); // Mở trình duyệt ngay lập tức
-                },
-                child: const Text('Mở link', style: TextStyle(color: Colors.blue)),
-              ),
+            TextButton(
+              onPressed: () async {
+                await _launchUrl(code); // Thử mở link, kể cả khi không phải URL
+              },
+              child: const Text('Mở link', style: TextStyle(color: Colors.blue)),
+            ),
             TextButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();

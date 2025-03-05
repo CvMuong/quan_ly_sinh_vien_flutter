@@ -275,47 +275,47 @@ class _StudentInfoScreenState extends State<StudentInfoScreen>
               ),
             ],
           ),
-          Positioned(
-            bottom: 24,
-            right: 24,
-            child: AnimatedBuilder(
-              animation: _fadeAnimation,
-              builder: (context, child) {
-                return Opacity(
-                  opacity: _fadeAnimation.value,
-                  child: FloatingActionButton(
-                    heroTag:
-                    "editStudentInfo", // Thêm heroTag duy nhất
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => EditStudentInfoScreen(
-                              student: student!),
-                        ),
-                      );
-                    },
-                    backgroundColor: Colors.transparent,
-                    elevation: 8,
-                    child: Container(
-                      width: 60,
-                      height: 60,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [Colors.blueAccent, Colors.teal],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
-                      child: const Icon(Icons.edit,
-                          color: Colors.white, size: 28),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
+          // Positioned(
+          //   bottom: 24,
+          //   right: 24,
+          //   child: AnimatedBuilder(
+          //     animation: _fadeAnimation,
+          //     builder: (context, child) {
+          //       return Opacity(
+          //         opacity: _fadeAnimation.value,
+          //         child: FloatingActionButton(
+          //           heroTag:
+          //           "editStudentInfo", // Thêm heroTag duy nhất
+          //           onPressed: () {
+          //             Navigator.push(
+          //               context,
+          //               MaterialPageRoute(
+          //                 builder: (context) => EditStudentInfoScreen(
+          //                     student: student!),
+          //               ),
+          //             );
+          //           },
+          //           backgroundColor: Colors.transparent,
+          //           elevation: 8,
+          //           child: Container(
+          //             width: 60,
+          //             height: 60,
+          //             decoration: const BoxDecoration(
+          //               shape: BoxShape.circle,
+          //               gradient: LinearGradient(
+          //                 colors: [Colors.blueAccent, Colors.teal],
+          //                 begin: Alignment.topLeft,
+          //                 end: Alignment.bottomRight,
+          //               ),
+          //             ),
+          //             child: const Icon(Icons.edit,
+          //                 color: Colors.white, size: 28),
+          //           ),
+          //         ),
+          //       );
+          //     },
+          //   ),
+          // ),
         ],
       ),
     );
