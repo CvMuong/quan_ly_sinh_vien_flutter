@@ -18,6 +18,12 @@ class InfoStudentController extends GetxController {
       isLoading.value = true;
       errorMessage.value = '';
 
+      if (student.value == null) {
+        errorMessage.value = "Không có thông tin sinh viên để cập nhật";
+        isLoading.value = false;
+        return;
+      }
+
       InfoModel updatedStudent = InfoModel(
         id_sinh_vien: idSinhVien,
         mssv: student.value!.mssv,
@@ -28,7 +34,7 @@ class InfoStudentController extends GetxController {
         email: email,
         sdt: sdt,
         id_lop: student.value!.id_lop,
-        imageBytes: student.value!.imageBytes, // Giữ nguyên ảnh hiện tại
+        imageBytes: student.value!.imageBytes,
       );
 
       await InfoStudentService.updateStudentInfo(updatedStudent);

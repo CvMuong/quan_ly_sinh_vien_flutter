@@ -96,7 +96,15 @@ class _LoginScreenState extends State<LoginScreen> {
             color: Colors.white,
           ),
         ),
-        backgroundColor: Colors.lightBlue,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xff6A82FB), Color(0xffFC5C7D)],
+            ),
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:quan_ly_diem/models/infoStudentModel.dart';
-
 import '../controllers/updateStudentInfoController.dart';
 
 class EditStudentInfoScreen extends StatefulWidget {
@@ -23,10 +22,13 @@ class _EditStudentInfoScreenState extends State<EditStudentInfoScreen> {
   @override
   void initState() {
     super.initState();
-    nameController = TextEditingController(text: widget.student.ho_ten);
-    emailController = TextEditingController(text: widget.student.email);
-    phoneController = TextEditingController(text: widget.student.sdt);
-    addressController = TextEditingController(text: widget.student.dia_chi);
+    // Khởi tạo student trong controller từ widget.student
+    _controller.student.value = widget.student;
+
+    nameController = TextEditingController(text: _controller.student.value!.ho_ten);
+    emailController = TextEditingController(text: _controller.student.value!.email);
+    phoneController = TextEditingController(text: _controller.student.value!.sdt);
+    addressController = TextEditingController(text: _controller.student.value!.dia_chi);
   }
 
   @override
@@ -59,14 +61,17 @@ class _EditStudentInfoScreenState extends State<EditStudentInfoScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          "Cập nhật thông tin",
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        backgroundColor: Colors.blueAccent,
+        title: Text("Cập nhật thông tin", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),),
         centerTitle: true,
-        elevation: 0,
-        iconTheme: IconThemeData(color: Colors.white),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xff6A82FB), Color(0xffFC5C7D)],
+            ),
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -84,13 +89,18 @@ class _EditStudentInfoScreenState extends State<EditStudentInfoScreen> {
                   ? SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
               )
-                  : Text("Lưu thông tin", style: TextStyle(fontSize: 18, color: Colors.white)),
+                  : Text("Lưu thông tin",
+                  style: TextStyle(fontSize: 18, color: Colors.white)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blueAccent,
                 padding: EdgeInsets.symmetric(vertical: 14, horizontal: 30),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
                 elevation: 5,
               ),
             )),
